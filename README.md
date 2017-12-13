@@ -11,9 +11,9 @@ Others new layers ,pelease reference
 - https://github.com/liyemei/caffe-segnet
 - https://github.com/liyemei/CRF-as-RNN
 # Usage
-## About the deformable conv layer
+## About the deformable convolutional layer
 
-### The params in DeformableConvolution:
+### The params in Deformable Convolution:
 
 
 ```
@@ -64,7 +64,7 @@ layer {
 }
 ```
 
-### DeformableConvolution layer:
+### Deformable Convolutional layer:
 
 
 ```
