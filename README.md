@@ -1,90 +1,145 @@
-This branch of Caffe extends [BVLC-led Caffe](https://github.com/BVLC/caffe) by adding Windows support and other functionalities commonly used by Microsoft's researchers, such as managed-code wrapper, [Faster-RCNN](https://papers.nips.cc/paper/5638-faster-r-cnn-towards-real-time-object-detection-with-region-proposal-networks.pdf), [R-FCN](https://arxiv.org/pdf/1605.06409v2.pdf), etc.
+Compiler Environment
 
-**Update**: this branch is not actively maintained. Please checkout [this](https://github.com/BVLC/caffe/tree/windows) for more active Windows support.
+vs2013 windows10 64-bit cuda8.0 cudDNN5
 
----
+Thanks to the code:
 
-# Caffe
+https://github.com/unsky/Deformable-ConvNets-caffe
+https://github.com/jyh2986/Active-Convolution
+https://github.com/Longqi-S/Focal-Loss
+layers
 
-|  **`Linux (CPU)`**   |  **`Windows (CPU)`** |
-|-------------------|----------------------|
-| [![Travis Build Status](https://api.travis-ci.org/Microsoft/caffe.svg?branch=master)](https://travis-ci.org/Microsoft/caffe) | [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/6x4l911frv07lj1w/branch/master?svg=true)](https://ci.appveyor.com/project/zer0n/caffe) |              
+It includes the deformable conv layer\focal loss\active-conv. Others new layers ,pelease reference
 
-[![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
+https://github.com/liyemei/caffe-segnet
+https://github.com/liyemei/CRF-as-RNN
+Usage
 
-Caffe is a deep learning framework made with expression, speed, and modularity in mind.
-It is developed by the Berkeley Vision and Learning Center ([BVLC](http://bvlc.eecs.berkeley.edu)) and community contributors.
+About the deformable conv layer
 
-Check out the [project site](http://caffe.berkeleyvision.org) for all the details like
+The params in DeformableConvolution:
 
-- [DIY Deep Learning for Vision with Caffe](https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.p)
-- [Tutorial Documentation](http://caffe.berkeleyvision.org/tutorial/)
-- [BVLC reference models](http://caffe.berkeleyvision.org/model_zoo.html) and the [community model zoo](https://github.com/BVLC/caffe/wiki/Model-Zoo)
-- [Installation instructions](http://caffe.berkeleyvision.org/installation.html)
+bottom[0](data): (batch_size, channel, height, width)
+bottom[1] (offset): (batch_size, deformable_group * kernel[0] * kernel[1]*2, height, width)
+Define:
 
-and step-by-step examples.
+f(x,k,p,s,d) = floor((x+2*p-d*(k-1)-1)/s)+1
+the output of the DeformableConvolution layer:
 
-## Windows Setup
-**Requirements**: Visual Studio 2013
+out_height=f(height, kernel[0], pad[0], stride[0], dilate[0])
+out_width=f(width, kernel[1], pad[1], stride[1], dilate[1])
+Offset layer:
 
-### Pre-Build Steps
-Copy `.\windows\CommonSettings.props.example` to `.\windows\CommonSettings.props`
-
-By defaults Windows build requires `CUDA` and `cuDNN` libraries.
-Both can be disabled by adjusting build variables in `.\windows\CommonSettings.props`.
-Python support is disabled by default, but can be enabled via `.\windows\CommonSettings.props` as well.
-3rd party dependencies required by Caffe are automatically resolved via NuGet.
-
-### CUDA
-Download `CUDA Toolkit 7.5` [from nVidia website](https://developer.nvidia.com/cuda-toolkit).
-If you don't have CUDA installed, you can experiment with CPU_ONLY build.
-In `.\windows\CommonSettings.props` set `CpuOnlyBuild` to `true` and set `UseCuDNN` to `false`.
-
-### cuDNN
-Download `cuDNN v4` or `cuDNN v5` [from nVidia website](https://developer.nvidia.com/cudnn).
-Unpack downloaded zip to %CUDA_PATH% (environment variable set by CUDA installer).
-Alternatively, you can unpack zip to any location and set `CuDnnPath` to point to this location in `.\windows\CommonSettings.props`.
-`CuDnnPath` defined in `.\windows\CommonSettings.props`.
-Also, you can disable cuDNN by setting `UseCuDNN` to `false` in the property file.
-
-### Python
-To build Caffe Python wrapper set `PythonSupport` to `true` in `.\windows\CommonSettings.props`.
-Download Miniconda 2.7 64-bit Windows installer [from Miniconda website] (http://conda.pydata.org/miniconda.html).
-Install for all users and add Python to PATH (through installer).
-
-Run the following commands from elevated command prompt:
-
-```
-conda install --yes numpy scipy matplotlib scikit-image pip
-pip install protobuf
-```
-
-#### Remark
-After you have built solution with Python support, in order to use it you have to either:  
-* set `PythonPath` environment variable to point to `<caffe_root>\Build\x64\Release\pycaffe`, or
-* copy folder `<caffe_root>\Build\x64\Release\pycaffe\caffe` under `<python_root>\lib\site-packages`.
-
-### Matlab
-To build Caffe Matlab wrapper set `MatlabSupport` to `true` and `MatlabDir` to the root of your Matlab installation in `.\windows\CommonSettings.props`.
-
-#### Remark
-After you have built solution with Matlab support, in order to use it you have to:
-* add the generated `matcaffe` folder to Matlab search path, and
-* add `<caffe_root>\Build\x64\Release` to your system path.
-
-### Build
-Now, you should be able to build `.\windows\Caffe.sln`
-
-## License and Citation
-
-Caffe is released under the [BSD 2-Clause license](https://github.com/BVLC/caffe/blob/master/LICENSE).
-The BVLC reference models are released for unrestricted use.
-
-Please cite Caffe in your publications if it helps your research:
-
-    @article{jia2014caffe,
-      Author = {Jia, Yangqing and Shelhamer, Evan and Donahue, Jeff and Karayev, Sergey and Long, Jonathan and Girshick, Ross and Guadarrama, Sergio and Darrell, Trevor},
-      Journal = {arXiv preprint arXiv:1408.5093},
-      Title = {Caffe: Convolutional Architecture for Fast Feature Embedding},
-      Year = {2014}
+layer {
+  name: "offset"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "offset"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 72
+    kernel_size: 3
+    stride: 1
+    dilation: 2
+    pad: 2
+    weight_filler {
+      type: "xavier"
     }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+DeformableConvolution layer:
+
+layer {
+  name: "dec"
+  type: "DeformableConvolution"
+  bottom: "conv1"
+  bottom: "offset"
+  top: "dec"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  deformable_convolution_param {
+    num_output: 512
+    kernel_size: 3
+    stride: 1
+    pad: 2
+    engine: 1
+    dilation: 2
+    deformable_group: 4
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+Active Convolution
+
+ACU has 4 parameters(weight, bias, x-positions, y-positions of synapse). Even though you don't use bias term, the order will not be changed.
+
+Please refer deploy file in models/ACU
+
+If you want define arbitary shape of convolution,
+
+use non SQUARE type in aconv_param
+define number of synapse using kernel_h, kernel_w parameter in convolution_param In example, if you want define cross-shaped convolution with 4 synapses, you can use like belows.
+...
+aconv_param{   type: CIRCLE }
+convolution_param {    num_output: 48    kernel_h: 1    kernel_w: 4    stride: 1 }
+...
+When you use user-defined shape of convolution, you'd better edit aconv_fast_layer.cpp directly to define initial position of synapses.
+
+Focal Loss layer
+
+optional SoftmaxFocalLossParameter softmax_focal_loss_param = XXX; (XXX is determined by your own caffe)
+
+message SoftmaxFocalLossParameter{
+  optional float alpha = 1 [default = 0.25];
+  optional float gamma = 2 [default = 2];
+}
+
+layer {
+  name: "focal_loss"
+  type: "SoftmaxWithFocalLoss"
+  bottom: "ip2"
+  bottom: "label"
+  top: "focal_loss"
+  softmax_focal_loss_param {
+    alpha: 1 
+    gamma: 1
+  }
+}
+Notes
+
+Loss = -1/M * sum_t alpha * (1 - p_t) ^ gamma * log(p_t)
+Sigmoid Form
+
+Here use softmax instead of sigmoid function. If you want see how to use sigmoid to implement Focal Loss, please see https://github.com/sciencefans/Focal-Loss to get more information.
+
+Citation
+
+Focal-Loss
+
+The paper is available at https://arxiv.org/abs/1708.02002.
+
+Active Convolution
+
+This repository contains the implementation for the paper Active Convolution: Learning the Shape of Convolution for Image Classification.
+
+The code is based on Caffe and cuDNN(v5)
+
+Deformable Convolutional Networks
+
+Deformable Convolutional Networks.” arXiv [cs.CV]. arXiv. http://arxiv.org/abs/1703.06211
