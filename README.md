@@ -162,3 +162,11 @@ This repository contains the implementation for the paper Active Convolution: Le
 The code is based on Caffe and cuDNN(v5)
 ## Deformable Convolutional Networks
 Deformable Convolutional Networks.” arXiv [cs.CV]. arXiv. http://arxiv.org/abs/1703.06211
+@misc{chollet2015keras,
+  author = {Chollet, François and others},
+  title = {Keras},
+  year = {2015},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/fchollet/keras}}
+}
